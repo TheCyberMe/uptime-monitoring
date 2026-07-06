@@ -1,38 +1,19 @@
 import os
-import time
 import requests
-import threading
-from flask import Flask, request
-from prometheus_client import Gauge, start_http_server, generate_latest
-import logging
+from flask import Flask, jsonify
 
 app = Flask(__name__)
-logging.basicConfig(level=logging.INFO)
-
-# Prometheus metrics
-isp_status = Gauge('isp_status', 'ISP Status (1=UP, 0=DOWN)', ['site', 'isp', 'name'])
-isp_latency = Gauge('isp_latency_ms', 'ISP Latency in ms', ['site', 'isp', 'name'])
-
-# UPDATE THIS: Map YOUR actual monitor names to sites
-MONITOR_MAPPING = {
-    'Azure- 168.61.16.155': {'site': 'azure', 'isp': 'azure', 'name': 'Azure'},
-    'OAK-ISP01- 12.125.210.25': {'site': 'oak', 'isp': 'isp01', 'name': 'OAK-ISP01'},
-    'OAK-ISP02-  50.145.122.161': {'site': 'oak', 'isp': 'isp02', 'name': 'OAK-ISP02'},
-    'OAK-ISP03- 104.6.68.1': {'site': 'oak', 'isp': 'isp03', 'name': 'OAK-ISP03'},
-    'CVG-ISP01- 66.117.201.145': {'site': 'cvg', 'isp': 'isp01', 'name': 'CVG-ISP01'},
-    'CVG-ISP02-  98.103.101.145': {'site': 'cvg', 'isp': 'isp02', 'name': 'CVG-ISP02'},
-    'MAA-ISP01- 183.82.247.137': {'site': 'maa', 'isp': 'isp01', 'name': 'MAA-ISP01'},
-    'MAA-ISP02- 125.18.81.233': {'site': 'maa', 'isp': 'isp02', 'name': 'MAA-ISP02'},
-    'BLR0002- TATA TELECOMMUNICATION': {'site': 'blr', 'isp': 'tata', 'name': 'BLR-TATA'},
-    'BLR0002-AIRTEL': {'site': 'blr', 'isp': 'airtel', 'name': 'BLR-AIRTEL'},
-    'BLR0002-TATA COMMUNICATION': {'site': 'blr', 'isp': 'tata_comm', 'name': 'BLR-TATA-COMM'},
-}
 
 UPTIME_ROBOT_API_KEY = os.environ.get('UPTIME_ROBOT_API_KEY')
 UPTIME_ROBOT_API_URL = "https://api.uptimerobot.com/v2"
 
-def fetch_uptime_status():
-    """Fetch all monitors from Uptime Robot API"""
+@app.route('/', methods=['GET'])
+def health():
+    return jsonify({"status": "ok", "service": "ISP Monitor"})
+
+@app.route('/isp-status', methods=['GET'])
+def isp_status():
+    """Returns ISP status as JSON"""
     try:
         payload = {
             'api_key': UPTIME_ROBOT_API_KEY,
@@ -48,71 +29,24 @@ def fetch_uptime_status():
         data = response.json()
         
         if data.get('stat') != 'ok':
-            logging.error(f"API Error: {data.get('error', 'Unknown error')}")
-            return
+            return jsonify({'error': data.get('error')}), 400
         
+        # Format data for Grafana
+        isp_data = []
         for monitor in data.get('monitors', []):
-            name = monitor.get('friendly_name')
-            status = monitor.get('status')  # 2=UP, 9=DOWN
-            
-            if name in MONITOR_MAPPING:
-                mapping = MONITOR_MAPPING[name]
-                
-                # Convert status: 2=UP (1), 9=DOWN (0)
-                isp_up = 1 if status == 2 else 0
-                
-                # Update metrics
-                isp_status.labels(
-                    site=mapping['site'],
-                    isp=mapping['isp'],
-                    name=mapping['name']
-                ).set(isp_up)
-                
-                status_text = 'UP' if isp_up else 'DOWN'
-                logging.info(f"Updated: {name} → {status_text}")
-            else:
-                logging.warning(f"Monitor not in mapping: {name}")
+            isp_data.append({
+                'name': monitor.get('friendly_name'),
+                'status': 'UP' if monitor.get('status') == 2 else 'DOWN',
+                'status_code': monitor.get('status'),
+                'url': monitor.get('url')
+            })
         
-        logging.info(f"Successfully fetched {len(data.get('monitors', []))} monitors")
+        return jsonify({'data': isp_data, 'total': len(isp_data)})
     
     except Exception as e:
-        logging.error(f"Error fetching Uptime Robot data: {str(e)}")
-
-def background_update():
-    """Background thread that fetches status every 5 minutes"""
-    while True:
-        try:
-            fetch_uptime_status()
-            time.sleep(300)  # 5 minutes
-        except Exception as e:
-            logging.error(f"Background update error: {str(e)}")
-            time.sleep(60)
-
-@app.route('/', methods=['GET'])
-def health():
-    return {'status': 'ok', 'service': 'Uptime Robot API Monitor'}, 200
-
-@app.route('/metrics', methods=['GET'])
-def metrics():
-    """Prometheus metrics endpoint"""
-    return generate_latest()
-
-@app.route('/status', methods=['GET'])
-def status():
-    """View current ISP status as JSON"""
-    return {'message': 'Check /metrics for Prometheus format'}, 200
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
-    # Fetch status immediately on startup
-    fetch_uptime_status()
-    
-    # Start background thread for periodic updates
-    update_thread = threading.Thread(target=background_update, daemon=True)
-    update_thread.start()
-    
-    # Start Prometheus metrics server
-    start_http_server(5000)
-    
-    # Start Flask app
     port = int(os.environ.get('PORT', 5001))
     app.run(host='0.0.0.0', port=port, debug=False)
+
