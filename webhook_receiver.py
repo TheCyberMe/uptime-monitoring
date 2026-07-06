@@ -15,26 +15,17 @@ isp_latency = Gauge('isp_latency_ms', 'ISP Latency in ms', ['site', 'isp', 'name
 
 # UPDATE THIS: Map YOUR actual monitor names to sites
 MONITOR_MAPPING = {
-    # OAK (Oakland) - US Site 1
-    'OAK-ISP01-12.125.210.25': {'site': 'oak', 'isp': 'isp01', 'name': 'OAK-ISP01'},
-    'OAK-ISP03-104.6.68.1': {'site': 'oak', 'isp': 'isp03', 'name': 'OAK-ISP03'},
-    'OAK-ISP02-50.145.122.161': {'site': 'oak', 'isp': 'isp02', 'name': 'OAK-ISP02'},
-    
-    # CVG (Cincinnati) - US Site 2
-    'CVG-ISP01-66.117.201.145': {'site': 'cvg', 'isp': 'isp01', 'name': 'CVG-ISP01'},
-    'CVG-ISP02-98.103.101.145': {'site': 'cvg', 'isp': 'isp02', 'name': 'CVG-ISP02'},
-    
-    # MAA (Chennai) - India Site 1
-    'MAA-ISP01-183.82.247.137': {'site': 'maa', 'isp': 'isp01', 'name': 'MAA-ISP01'},
-    'MAA-ISP02-125.18.81.233': {'site': 'maa', 'isp': 'isp02', 'name': 'MAA-ISP02'},
-    
-    # BLR (Banglore)- India Site 2
-    'BLR0002-TATA TELECOMMUNICATION': {'site': 'helium', 'isp': 'tatatele', 'name': 'BLR-TATATELE'},
-    'BLR0002-AIRTEL': {'site': 'helium', 'isp': 'airtel', 'name': 'BLR-AIRTEL'},
-    'BLR0002-TATA COMMUNICATION': {'site': 'helium', 'isp': 'tata-comm', 'name': 'BLR-TATA-COMM'},
-    
-    # Azure
-    'Azure-168.61.16.155': {'site': 'azure', 'isp': 'azure', 'name': 'Azure-VM'},
+    'Azure- 168.61.16.155': {'site': 'azure', 'isp': 'azure', 'name': 'Azure'},
+    'OAK-ISP01- 12.125.210.25': {'site': 'oak', 'isp': 'isp01', 'name': 'OAK-ISP01'},
+    'OAK-ISP02-  50.145.122.161': {'site': 'oak', 'isp': 'isp02', 'name': 'OAK-ISP02'},
+    'OAK-ISP03- 104.6.68.1': {'site': 'oak', 'isp': 'isp03', 'name': 'OAK-ISP03'},
+    'CVG-ISP01- 66.117.201.145': {'site': 'cvg', 'isp': 'isp01', 'name': 'CVG-ISP01'},
+    'CVG-ISP02-  98.103.101.145': {'site': 'cvg', 'isp': 'isp02', 'name': 'CVG-ISP02'},
+    'MAA-ISP01- 183.82.247.137': {'site': 'maa', 'isp': 'isp01', 'name': 'MAA-ISP01'},
+    'MAA-ISP02- 125.18.81.233': {'site': 'maa', 'isp': 'isp02', 'name': 'MAA-ISP02'},
+    'BLR0002- TATA TELECOMMUNICATION': {'site': 'blr', 'isp': 'tata', 'name': 'BLR-TATA'},
+    'BLR0002-AIRTEL': {'site': 'blr', 'isp': 'airtel', 'name': 'BLR-AIRTEL'},
+    'BLR0002-TATA COMMUNICATION': {'site': 'blr', 'isp': 'tata_comm', 'name': 'BLR-TATA-COMM'},
 }
 
 UPTIME_ROBOT_API_KEY = os.environ.get('UPTIME_ROBOT_API_KEY')
